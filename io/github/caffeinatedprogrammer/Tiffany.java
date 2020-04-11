@@ -18,10 +18,22 @@ public class Tiffany {
                 return "echo hello world!";
             }
         });
-        this.tree.insertPathByString(Arrays.asList(null, "print"), new CommandGenerator() {
+        this.tree.insertPathByString(Arrays.asList("dummy"), new CommandGenerator() {
             @Override
             public String getCommand(List<TemplateTree.Node<?>> nodes) {
-                return "echo " + nodes.get(0).getValue().toString();
+                return "git add -A && git commit -m \"dummy\"";
+            }
+        });
+        this.tree.insertPathByString(Arrays.asList("store"), new CommandGenerator() {
+            @Override
+            public String getCommand(List<TemplateTree.Node<?>> nodes) {
+                return "git add -A && git commit --amend --no-edit";
+            }
+        });
+        this.tree.insertPathByString(Arrays.asList("good", "morning"), new CommandGenerator() {
+            @Override
+            public String getCommand(List<TemplateTree.Node<?>> nodes) {
+                return "echo Good morning!";
             }
         });
     }
