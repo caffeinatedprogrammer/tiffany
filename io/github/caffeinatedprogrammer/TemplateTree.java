@@ -3,7 +3,7 @@ package io.github.caffeinatedprogrammer;
 import java.util.*;
 
 public class TemplateTree {
-    public static abstract class Node<T> {
+    public static abstract class Node<T> implements Cloneable{
         private Map<Node<?>, Node<?>> children = new HashMap<>();
         protected T value;
         public Node(T value) {
@@ -11,12 +11,22 @@ public class TemplateTree {
             this.value = value;
         }
         
+        @Override
+        public Node<?> clone() {
+            try {
+                Node<?> cloned = (Node<?>)(super.clone());
+                return cloned;
+            } catch (CloneNotSupportedException ex) {
+                throw new InternalError();
+            }
+        }
+        
         public abstract boolean isValueFixed();
         @Override
         public boolean equals(Object o) {
             if (o instanceof Node<?>) {
                 Node<?> another = (Node<?>)o;
-                if (another.isValueFixed() == this.isValueFixed()) {
+                if (another.isValueFixed() != this.isValueFixed()) {
                     return false;
                 } else {
                     Object anotherValue = another.getValue();
@@ -32,9 +42,17 @@ public class TemplateTree {
             }
         }
         
+        public String getCommand(List<Node<?>> nodes) {
+            return null;
+        }
+        
         @Override
         public int hashCode() {
-            return this.getValue().hashCode() * (this.isValueFixed() ? 1 : 2);
+            T value = this.getValue();
+            if (value == null) {
+                return 0;
+            }
+            return value.hashCode() * (this.isValueFixed() ? 1 : 2);
         }
         
         Map<Node<?>, Node<?>> getChildren() {
@@ -46,6 +64,7 @@ public class TemplateTree {
             return this.getValue().toString();
         }
         
+        public abstract void setValue(T value);
         public T getValue() {
             return this.value;
         }
@@ -54,6 +73,11 @@ public class TemplateTree {
     public static class CommandNode extends Node<String> {
         public CommandNode(String value) {
             super(value);
+        }
+        
+        @Override
+        public void setValue(String value) {
+            throw new UnsupportedOperationException();
         }
         
         @Override
@@ -106,6 +130,37 @@ public class TemplateTree {
         return result;
     }
     
+    List<Node<?>> matchPath(List<String> givenPath) {
+        List<Node<?>> result = new ArrayList<>();
+        Node<?> current = this.root;
+        for (String step: givenPath) {
+            Map<Node<?>, Node<?>> children = current.getChildren();
+            Node<?> next;
+            if ((next = children.get(new CommandNode(step))) != null) {
+                result.add(next);
+            } else if ((next = children.get(new ArgumentNode())) != null) {
+                result.add(next);
+            } else {
+                return new ArrayList<>();
+            }
+            current = next;
+        }
+        return result;
+    }
+    
+    String getCommandFromPath(List<String> givenPath) {
+        List<Node<?>> nodes = matchPath(givenPath);
+        List<Node<?>> arguments = new ArrayList<>();
+        for (int i=0; i<nodes.size(); i++) {
+            if (nodes.get(i) instanceof ArgumentNode) {
+                ArgumentNode node = (ArgumentNode)nodes.get(i).clone();
+                node.setValue(givenPath.get(i));
+                arguments.add(node);
+            }
+        }
+        return nodes.get(nodes.size() - 1).getCommand(arguments);
+    }
+    
     void insertPath(List<Node<?>> children) {
         Node<?> current = this.root;
         for (Node<?> path: children) {
@@ -119,10 +174,26 @@ public class TemplateTree {
         }
     }
     
-    void insertPathByString(List<String> children) {
+    void insertPathByString(List<String> children, CommandGenerator generator) {
         List<Node<?>> nodes = new ArrayList<>();
-        for (String child: children) {
+        for (String child: children.subList(0, children.size() - 1)) {
             nodes.add(child == null ? new ArgumentNode() : new CommandNode(child));
+        }
+        String lastChildren = children.get(children.size() - 1);
+        if (lastChildren != null) {
+            nodes.add(new CommandNode(lastChildren) {
+                @Override
+                public String getCommand(List<Node<?>> args) {
+                    return generator.getCommand(args);
+                }
+            });
+        } else {
+            nodes.add(new ArgumentNode() {
+                @Override
+                public String getCommand(List<Node<?>> args) {
+                    return generator.getCommand(args);
+                }
+            });
         }
         insertPath(nodes);
     }
