@@ -30,6 +30,18 @@ public class Tiffany {
                 return "git add -A && git commit --amend --no-edit";
             }
         });
+        this.tree.insertPathByString(Arrays.asList("rebase", null), new CommandGenerator() {
+            @Override
+            public String getCommand(List<TemplateTree.Node<?>> nodes) {
+                return "git rebase --interactive HEAD~" + nodes.get(0);
+            }
+        });
+        this.tree.insertPathByString(Arrays.asList("eslint"), new CommandGenerator() {
+            @Override
+            public String getCommand(List<TemplateTree.Node<?>> nodes) {
+                return "eslint $(git diff HEAD~1 --name-only --relative) --fix";
+            }
+        });
         this.tree.insertPathByString(Arrays.asList("good", "morning"), new CommandGenerator() {
             @Override
             public String getCommand(List<TemplateTree.Node<?>> nodes) {
