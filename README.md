@@ -3,7 +3,7 @@
 ## Introduction
 Tiffany is a command line helper which aims at generating commands that are used frequently.
 
-## Why the project is named Tiffany?
+## Why is the project named Tiffany?
 Tiffany is the name of the staff that I encountered at Apple Store when I brought my iPad Pro.
 She was introducing the product in an enthusiastic, courteous and articulate manner.
 I was surprised when she wrote her name on my receipt.
